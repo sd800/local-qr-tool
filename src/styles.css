@@ -674,6 +674,16 @@ footer {
   letter-spacing: -0.02em;
 }
 
+.reader-format-note {
+  display: block;
+  max-width: 420px;
+  margin-top: 6px;
+  color: var(--muted);
+  font-family: "DM Mono", monospace;
+  font-size: 9px;
+  line-height: 1.55;
+}
+
 .field label,
 .select-field > span,
 .range-field > span {
@@ -996,18 +1006,6 @@ footer {
 
 .download-row .button {
   width: 100%;
-}
-
-.download-row .button-light {
-  color: #fff;
-  background: #3b3e3c;
-  border-color: #3b3e3c;
-}
-
-.download-row .button-light:hover:not(:disabled) {
-  color: #fff;
-  background: #292c2a;
-  border-color: #292c2a;
 }
 
 .button-copy-image {
