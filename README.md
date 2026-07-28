@@ -14,6 +14,7 @@ server.
 - Scan supported visual codes with a device camera
 - Read QR, Micro QR, Aztec, Data Matrix, PDF417, UPC/EAN, Code 39/93/128,
   Codabar, ITF, and DataBar from PNG, JPG, WebP, and GIF images
+- Decode IATA BCBP boarding-pass fields locally from supported 2D codes
 - Light and dark themes with native browser color-scheme support
 - Responsive layout for desktop and mobile devices
 - Static deployment with no backend or account system
