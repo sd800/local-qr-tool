@@ -11,8 +11,9 @@ server.
 - Customize image size, error correction, colors, and quiet zone
 - Copy generated QR codes directly to the clipboard
 - Download QR codes as PNG or SVG
-- Scan QR codes with a device camera
-- Read QR codes from PNG, JPG, WebP, and GIF images
+- Scan supported visual codes with a device camera
+- Read QR, Micro QR, Aztec, Data Matrix, PDF417, UPC/EAN, Code 39/93/128,
+  Codabar, ITF, and DataBar from PNG, JPG, WebP, and GIF images
 - Light and dark themes with native browser color-scheme support
 - Responsive layout for desktop and mobile devices
 - Static deployment with no backend or account system
@@ -57,6 +58,7 @@ server.
 - Vite
 - qrcode
 - qr-scanner
+- ZXing
 - Lucide
 
 ## Project Structure
