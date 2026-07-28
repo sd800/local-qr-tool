@@ -13,6 +13,8 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@zxing/browser": "^0.2.1",
+    "@zxing/library": "^0.23.0",
     "lucide-react": "^1.27.0",
     "qr-scanner": "^1.4.2",
     "qrcode": "^1.5.4",
