@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="Create, customize, download, and scan QR codes entirely in your browser."
+    />
+    <meta name="color-scheme" content="light dark" />
+    <meta name="theme-color" content="#f2f0e9" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="QR Studio — Create & scan QR codes" />
+    <meta
+      property="og:description"
+      content="A private, fast QR toolkit that works entirely in your browser."
+    />
+    <meta property="og:image" content="%VITE_SITE_URL%/og.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta
+      property="og:image:alt"
+      content="QR Studio — QR codes, minus the fuss."
+    />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="QR Studio — Create & scan QR codes" />
+    <meta
+      name="twitter:description"
+      content="A private, fast QR toolkit that works entirely in your browser."
+    />
+    <meta name="twitter:image" content="%VITE_SITE_URL%/og.png" />
+    <title>Local QR Studio — Create & scan QR codes</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script>
+      const preferredTheme = window.matchMedia("(prefers-color-scheme: dark)")
+        .matches
+        ? "dark"
+        : "light";
+      try {
+        const savedTheme = window.localStorage.getItem("qr-studio-theme");
+        document.documentElement.dataset.theme =
+          savedTheme === "dark" || savedTheme === "light"
+            ? savedTheme
+            : preferredTheme;
+      } catch {
+        document.documentElement.dataset.theme = preferredTheme;
+      }
+
+      const normalizedPath = window.location.pathname.replaceAll("\\", "/");
+      const isPortableCopy =
+        normalizedPath.includes("/dist/") || normalizedPath.includes("/docs/");
+      if (window.location.protocol === "file:" && !isPortableCopy) {
+        window.location.replace(
+          new URL("./docs/index.html", window.location.href).href,
+        );
+      }
+    </script>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
