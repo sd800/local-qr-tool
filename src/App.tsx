@@ -25,6 +25,11 @@ import {
   Upload,
   X,
 } from "lucide-react";
+import {
+  BrowserMultiFormatReader,
+  type IScannerControls,
+} from "@zxing/browser";
+import { BarcodeFormat } from "@zxing/library";
 import QRCode, { type QRCodeErrorCorrectionLevel } from "qrcode";
 import QrScanner from "qr-scanner";
 import {
@@ -51,6 +56,23 @@ type CameraState =
 
 const INITIAL_VALUE = "https://example.com";
 const MAX_CHARACTERS = 1600;
+const FALLBACK_FORMATS = [
+  BarcodeFormat.MICRO_QR_CODE,
+  BarcodeFormat.DATA_MATRIX,
+  BarcodeFormat.AZTEC,
+  BarcodeFormat.PDF_417,
+  BarcodeFormat.UPC_A,
+  BarcodeFormat.UPC_E,
+  BarcodeFormat.EAN_8,
+  BarcodeFormat.EAN_13,
+  BarcodeFormat.CODABAR,
+  BarcodeFormat.CODE_39,
+  BarcodeFormat.CODE_93,
+  BarcodeFormat.CODE_128,
+  BarcodeFormat.ITF,
+  BarcodeFormat.RSS_14,
+  BarcodeFormat.RSS_EXPANDED,
+];
 
 function downloadBlob(blob: Blob, filename: string) {
   const href = URL.createObjectURL(blob);
@@ -612,10 +634,28 @@ function Reader() {
   const [fileName, setFileName] = useState("");
   const videoRef = useRef<HTMLVideoElement>(null);
   const scannerRef = useRef<QrScanner | null>(null);
+  const fallbackReaderRef = useRef<BrowserMultiFormatReader | null>(null);
+  const fallbackControlsRef = useRef<IScannerControls | null>(null);
+  const cameraActiveRef = useRef(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const safeLink = useMemo(() => getSafeUrl(scanResult), [scanResult]);
 
+  const getFallbackReader = () => {
+    if (!fallbackReaderRef.current) {
+      const reader = new BrowserMultiFormatReader(new Map(), {
+        delayBetweenScanAttempts: 650,
+        delayBetweenScanSuccess: 1000,
+      });
+      reader.possibleFormats = FALLBACK_FORMATS;
+      fallbackReaderRef.current = reader;
+    }
+    return fallbackReaderRef.current;
+  };
+
   const stopCamera = useCallback(() => {
+    cameraActiveRef.current = false;
+    fallbackControlsRef.current?.stop();
+    fallbackControlsRef.current = null;
     scannerRef.current?.stop();
     scannerRef.current?.destroy();
     scannerRef.current = null;
@@ -631,11 +671,17 @@ function Reader() {
   const showResult = useCallback((result: string) => {
     setScanResult(result);
     setScanError("");
+    cameraActiveRef.current = false;
+    fallbackControlsRef.current?.stop();
+    fallbackControlsRef.current = null;
     scannerRef.current?.stop();
     setCameraState("idle");
   }, []);
 
   const startCamera = async () => {
+    cameraActiveRef.current = false;
+    fallbackControlsRef.current?.stop();
+    fallbackControlsRef.current = null;
     setScanError("");
     setScanResult("");
     setCameraState("starting");
@@ -664,8 +710,30 @@ function Reader() {
       );
       scannerRef.current = scanner;
       await scanner.start();
+      cameraActiveRef.current = true;
       setCameraState("active");
+
+      void getFallbackReader()
+        .decodeFromVideoElement(
+          videoRef.current,
+          (result, _error, controls) => {
+            if (!result) return;
+            controls.stop();
+            showResult(result.getText());
+          },
+        )
+        .then((controls) => {
+          if (cameraActiveRef.current) {
+            fallbackControlsRef.current = controls;
+          } else {
+            controls.stop();
+          }
+        })
+        .catch(() => {
+          // QR scanning remains available if the fallback cannot start.
+        });
     } catch (error) {
+      cameraActiveRef.current = false;
       const message = error instanceof Error ? error.message.toLowerCase() : "";
       setCameraState(
         message.includes("permission") || message.includes("denied")
@@ -687,9 +755,17 @@ function Reader() {
       });
       showResult(result.data);
     } catch {
-      setScanError(
-        "No QR code found. Try a sharper image with the whole code visible.",
-      );
+      const imageUrl = URL.createObjectURL(file);
+      try {
+        const result = await getFallbackReader().decodeFromImageUrl(imageUrl);
+        showResult(result.getText());
+      } catch {
+        setScanError(
+          "No supported code found. Try a sharper image with the whole code visible.",
+        );
+      } finally {
+        URL.revokeObjectURL(imageUrl);
+      }
     }
   };
 
@@ -717,9 +793,9 @@ function Reader() {
   };
 
   const cameraMessage: Record<CameraState, string> = {
-    idle: "Point your camera at a QR code",
+    idle: "Point your camera at a supported code",
     starting: "Getting your camera ready…",
-    active: "Looking for a QR code…",
+    active: "Looking for a supported code…",
     denied: "Camera access was blocked. Allow it in your browser and try again.",
     unsupported: "No camera was found on this device.",
     error: "The camera could not start. Try uploading an image instead.",
@@ -736,8 +812,12 @@ function Reader() {
         <div className="pane-heading">
           <span className="step-number">02</span>
           <div>
-            <p>READ A QR CODE</p>
+            <p>READ A VISUAL CODE</p>
             <h3>Show us the square.</h3>
+            <small className="reader-format-note">
+              QR, Micro QR, Aztec, Data Matrix, PDF417, UPC/EAN, Code
+              39/93/128, Codabar, ITF &amp; DataBar.
+            </small>
           </div>
         </div>
 
@@ -815,12 +895,12 @@ function Reader() {
               type="file"
               accept="image/*"
               onChange={handleFileChange}
-              aria-label="Choose an image containing a QR code"
+              aria-label="Choose an image containing a visual code"
             />
             <span className="upload-icon">
               <Upload size={30} aria-hidden="true" />
             </span>
-            <h4>{fileName || "Drop your QR image here"}</h4>
+            <h4>{fileName || "Drop your code image here"}</h4>
             <p>PNG, JPG, WebP, or GIF</p>
             <button
               className="button button-dark"
