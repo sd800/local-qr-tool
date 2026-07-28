@@ -6,6 +6,7 @@ const projectRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const outputRoot = resolve(projectRoot, "dist");
 const pagesRoot = resolve(projectRoot, "docs");
 const htmlPath = resolve(outputRoot, "index.html");
+const previewImagePath = resolve(projectRoot, "illu.png");
 
 let html = await readFile(htmlPath, "utf8");
 
@@ -61,7 +62,8 @@ await rm(resolve(outputRoot, "assets"), { recursive: true, force: true });
 await mkdir(pagesRoot, { recursive: true });
 await Promise.all([
   writeFile(resolve(pagesRoot, "index.html"), html),
-  copyFile(resolve(outputRoot, "og.png"), resolve(pagesRoot, "og.png")),
+  copyFile(previewImagePath, resolve(outputRoot, "og.png")),
+  copyFile(previewImagePath, resolve(pagesRoot, "og.png")),
   writeFile(resolve(pagesRoot, ".nojekyll"), ""),
 ]);
 
