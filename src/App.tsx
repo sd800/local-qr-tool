@@ -327,7 +327,12 @@ function App() {
           </div>
 
           <div className="workspace">
-            <div className="workspace-tabs" role="tablist" aria-label="QR tools">
+            <div
+              className="workspace-tabs"
+              id="tool-choice-menu"
+              role="tablist"
+              aria-label="QR tools"
+            >
               <button
                 id="generate-tab"
                 role="tab"
@@ -775,7 +780,6 @@ function Reader() {
     typeof QrScanner.createQrEngine
   > | null>(null);
   const cameraActiveRef = useRef(false);
-  const readerInputRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const safeLink = useMemo(() => getSafeUrl(scanResult), [scanResult]);
   const bcbpData = useMemo(
@@ -1237,7 +1241,7 @@ function Reader() {
 
     if (window.matchMedia("(max-width: 900px)").matches) {
       window.requestAnimationFrame(() => {
-        readerInputRef.current?.scrollIntoView({
+        document.getElementById("tool-choice-menu")?.scrollIntoView({
           behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
             ? "auto"
             : "smooth",
@@ -1263,7 +1267,7 @@ function Reader() {
       role="tabpanel"
       aria-labelledby="scan-tab"
     >
-      <div className="reader-input-pane" ref={readerInputRef}>
+      <div className="reader-input-pane">
         <div className="pane-heading">
           <span className="step-number">02</span>
           <div>
