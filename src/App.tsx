@@ -121,6 +121,11 @@ function getClipboardImage(clipboardData: DataTransfer | null) {
   );
 }
 
+function releaseCanvas(canvas: HTMLCanvasElement) {
+  canvas.width = 1;
+  canvas.height = 1;
+}
+
 function Logo() {
   return (
     <a className="brand" href="#top" aria-label="QR Studio home">
@@ -717,6 +722,7 @@ function Reader() {
   const fallbackControlsRef = useRef<IScannerControls | null>(null);
   const enhancedScanTimerRef = useRef<number | null>(null);
   const enhancedScanTokenRef = useRef(0);
+  const imageScanTokenRef = useRef(0);
   const enhancedQrEngineRef = useRef<ReturnType<
     typeof QrScanner.createQrEngine
   > | null>(null);
@@ -794,6 +800,7 @@ function Reader() {
 
   useEffect(
     () => () => {
+      imageScanTokenRef.current += 1;
       const engine = enhancedQrEngineRef.current;
       if (engine) {
         void engine.then((resolvedEngine) => {
@@ -810,7 +817,11 @@ function Reader() {
   );
 
   useEffect(() => {
-    if (scanMode === "upload") stopCamera();
+    if (scanMode === "upload") {
+      stopCamera();
+    } else {
+      imageScanTokenRef.current += 1;
+    }
   }, [scanMode, stopCamera]);
 
   const showResult = useCallback(
@@ -828,33 +839,65 @@ function Reader() {
     [stopEnhancedScan],
   );
 
-  const decodeEnhancedFrames = useCallback(
-    async (frames: HTMLCanvasElement[]) => {
-      for (const frame of frames) {
+  const decodeEnhancedFrame = useCallback(
+    async (frame: HTMLCanvasElement) => {
+      try {
+        const qrResult = await QrScanner.scanImage(frame, {
+          qrEngine: getEnhancedQrEngine(),
+          returnDetailedScanResult: true,
+        });
+        return {
+          text: qrResult.data,
+          format: BarcodeFormat.QR_CODE,
+        };
+      } catch {
         try {
-          const qrResult = await QrScanner.scanImage(frame, {
-            qrEngine: getEnhancedQrEngine(),
-            returnDetailedScanResult: true,
-          });
+          const result = getEnhancedReader().decodeFromCanvas(frame);
           return {
-            text: qrResult.data,
-            format: BarcodeFormat.QR_CODE,
+            text: result.getText(),
+            format: result.getBarcodeFormat(),
           };
         } catch {
-          try {
-            const result = getEnhancedReader().decodeFromCanvas(frame);
-            return {
-              text: result.getText(),
-              format: result.getBarcodeFormat(),
-            };
-          } catch {
-            // Try the next locally enhanced frame.
-          }
+          return null;
         }
+      }
+    },
+    [],
+  );
+
+  const decodeEnhancedFrames = useCallback(
+    async (frames: HTMLCanvasElement[]) => {
+      try {
+        for (const frame of frames) {
+          const result = await decodeEnhancedFrame(frame);
+          if (result) return result;
+        }
+        return null;
+      } finally {
+        frames.forEach(releaseCanvas);
+      }
+    },
+    [decodeEnhancedFrame],
+  );
+
+  const decodeEnhancedImage = useCallback(
+    async (imageUrl: string, token: number) => {
+      for await (const frame of createEnhancedImageFrames(imageUrl)) {
+        if (token !== imageScanTokenRef.current) return null;
+
+        let result = null;
+        try {
+          result = await decodeEnhancedFrame(frame);
+        } finally {
+          releaseCanvas(frame);
+        }
+
+        if (token !== imageScanTokenRef.current) return null;
+        if (result) return result;
       }
       return null;
     },
-    [],
+    [decodeEnhancedFrame],
   );
 
   const startEnhancedCameraScan = (
@@ -902,6 +945,7 @@ function Reader() {
   };
 
   const startCamera = async () => {
+    imageScanTokenRef.current += 1;
     cameraActiveRef.current = false;
     stopEnhancedScan();
     fallbackControlsRef.current?.stop();
@@ -975,6 +1019,9 @@ function Reader() {
 
   const scanFile = async (file?: File) => {
     if (!file) return;
+    const token = imageScanTokenRef.current + 1;
+    imageScanTokenRef.current = token;
+    const isCurrentScan = () => token === imageScanTokenRef.current;
     setFileName(file.name || "Pasted image");
     setScanError("");
     setScanResult("");
@@ -984,17 +1031,22 @@ function Reader() {
       const result = await QrScanner.scanImage(file, {
         returnDetailedScanResult: true,
       });
-      showResult(result.data, BarcodeFormat.QR_CODE);
+      if (isCurrentScan()) {
+        showResult(result.data, BarcodeFormat.QR_CODE);
+      }
     } catch {
+      if (!isCurrentScan()) return;
       const imageUrl = URL.createObjectURL(file);
       try {
         const result = await getFallbackReader().decodeFromImageUrl(imageUrl);
-        showResult(result.getText(), result.getBarcodeFormat());
+        if (isCurrentScan()) {
+          showResult(result.getText(), result.getBarcodeFormat());
+        }
       } catch {
+        if (!isCurrentScan()) return;
         try {
-          const result = await decodeEnhancedFrames(
-            await createEnhancedImageFrames(imageUrl),
-          );
+          const result = await decodeEnhancedImage(imageUrl, token);
+          if (!isCurrentScan()) return;
           if (result) {
             showResult(result.text, result.format);
           } else {
@@ -1003,9 +1055,11 @@ function Reader() {
             );
           }
         } catch {
-          setScanError(
-            "No supported code found. Try a sharper image with the whole code visible.",
-          );
+          if (isCurrentScan()) {
+            setScanError(
+              "No supported code found. Try a sharper image with the whole code visible.",
+            );
+          }
         }
       } finally {
         URL.revokeObjectURL(imageUrl);
@@ -1046,6 +1100,7 @@ function Reader() {
   };
 
   const resetReader = () => {
+    imageScanTokenRef.current += 1;
     setScanResult("");
     setScanFormat(null);
     setScanError("");
