@@ -775,6 +775,7 @@ function Reader() {
     typeof QrScanner.createQrEngine
   > | null>(null);
   const cameraActiveRef = useRef(false);
+  const readerInputRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const safeLink = useMemo(() => getSafeUrl(scanResult), [scanResult]);
   const bcbpData = useMemo(
@@ -1233,6 +1234,17 @@ function Reader() {
     setScanFormat(null);
     setScanError("");
     setFileName("");
+
+    if (window.matchMedia("(max-width: 900px)").matches) {
+      window.requestAnimationFrame(() => {
+        readerInputRef.current?.scrollIntoView({
+          behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
+            ? "auto"
+            : "smooth",
+          block: "start",
+        });
+      });
+    }
   };
 
   const cameraMessage: Record<CameraState, string> = {
@@ -1251,7 +1263,7 @@ function Reader() {
       role="tabpanel"
       aria-labelledby="scan-tab"
     >
-      <div className="reader-input-pane">
+      <div className="reader-input-pane" ref={readerInputRef}>
         <div className="pane-heading">
           <span className="step-number">02</span>
           <div>
