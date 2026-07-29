@@ -115,6 +115,12 @@ const COUNTRY_DETAILS: Record<
   MEX: { name: "Mexico", heading: "Mexico" },
 };
 
+const ISSUER_COUNTRY_CODES: Record<Issuer["country"], AamvaCountryCode> = {
+  USA: "USA",
+  Canada: "CAN",
+  Mexico: "MEX",
+};
+
 const VERSION_NAMES: Record<string, string> = {
   "00": "Pre-2000 format",
   "01": "AAMVA DL/ID-2000",
@@ -479,6 +485,11 @@ function makeIssuerLabel(iin: string) {
   return `${issuer.jurisdiction}${abbreviation}, ${issuer.country}`;
 }
 
+function getCountryCodeFromIin(iin: string) {
+  const issuer = ISSUERS[iin];
+  return issuer ? ISSUER_COUNTRY_CODES[issuer.country] : null;
+}
+
 function addField(
   target: AamvaDisplayField[],
   used: Set<string>,
@@ -561,8 +572,15 @@ export function parseAamva(rawValue: string): AamvaData | null {
   if (!documentSubfile) return null;
 
   const fields = parseFields(documentSubfile.value);
-  const countryCode = fields.DCG as AamvaCountryCode | undefined;
-  if (!countryCode || !(countryCode in COUNTRY_DETAILS)) return null;
+  const hasCountryField = Object.prototype.hasOwnProperty.call(fields, "DCG");
+  const encodedCountryCode = fields.DCG;
+  const countryCode =
+    encodedCountryCode && encodedCountryCode in COUNTRY_DETAILS
+      ? (encodedCountryCode as AamvaCountryCode)
+      : hasCountryField && encodedCountryCode === ""
+        ? getCountryCodeFromIin(issuerIdentificationNumber)
+        : null;
+  if (!countryCode) return null;
 
   const familyName = fields.DCS || fields.DAB || fields.DAA;
   if (!fields.DAQ || !familyName || !fields.DBB) return null;
@@ -573,7 +591,9 @@ export function parseAamva(rawValue: string): AamvaData | null {
   const summary: AamvaDisplayField[] = [
     {
       label: "Issuing country (DCG)",
-      value: appendMeaning(countryCode, country.name),
+      value: encodedCountryCode
+        ? appendMeaning(encodedCountryCode, country.name)
+        : "[Empty]",
     },
     {
       label: "Issuer Identification Number (IIN)",
