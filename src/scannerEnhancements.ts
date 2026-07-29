@@ -139,10 +139,10 @@ function createGrayscaleCanvas(
   values: Uint8ClampedArray,
   width: number,
   height: number,
+  canvas = document.createElement("canvas"),
 ) {
-  const canvas = document.createElement("canvas");
-  canvas.width = width;
-  canvas.height = height;
+  if (canvas.width !== width) canvas.width = width;
+  if (canvas.height !== height) canvas.height = height;
   const context = canvas.getContext("2d");
   if (!context) return null;
   const image = context.createImageData(width, height);
@@ -166,13 +166,26 @@ function createThresholdCanvas(
   height: number,
   threshold: number,
   inverted = false,
+  canvas = document.createElement("canvas"),
 ) {
-  const binary = new Uint8ClampedArray(values.length);
+  if (canvas.width !== width) canvas.width = width;
+  if (canvas.height !== height) canvas.height = height;
+  const context = canvas.getContext("2d");
+  if (!context) return null;
+  const image = context.createImageData(width, height);
+
   for (let pixel = 0; pixel < values.length; pixel += 1) {
     const isDark = values[pixel] <= threshold;
-    binary[pixel] = isDark !== inverted ? 0 : 255;
+    const value = isDark !== inverted ? 0 : 255;
+    const offset = pixel * 4;
+    image.data[offset] = value;
+    image.data[offset + 1] = value;
+    image.data[offset + 2] = value;
+    image.data[offset + 3] = 255;
   }
-  return createGrayscaleCanvas(binary, width, height);
+
+  context.putImageData(image, 0, 0);
+  return canvas;
 }
 
 function createAdaptiveThresholdValues(
@@ -239,12 +252,9 @@ function createAdaptiveThresholdValues(
   return adaptive;
 }
 
-function createEnhancedCanvases(
-  source: HTMLCanvasElement,
-  intensive = false,
-) {
+function prepareEnhancedValues(source: HTMLCanvasElement) {
   const context = source.getContext("2d", { willReadFrequently: true });
-  if (!context) return [];
+  if (!context) return null;
 
   const { width, height } = source;
   const sourceData = context.getImageData(0, 0, width, height);
@@ -270,6 +280,16 @@ function createEnhancedCanvases(
   }
 
   const sharpenedValues = sharpenValues(grayscale, width, height, 0.58);
+  return { width, height, sharpenedValues };
+}
+
+function createEnhancedCanvases(source: HTMLCanvasElement) {
+  const prepared = prepareEnhancedValues(source);
+  source.width = 1;
+  source.height = 1;
+  if (!prepared) return [];
+
+  const { width, height, sharpenedValues } = prepared;
   const sharpenedCanvas = createGrayscaleCanvas(
     sharpenedValues,
     width,
@@ -283,43 +303,9 @@ function createEnhancedCanvases(
     threshold,
   );
 
-  if (!intensive) {
-    return [sharpenedCanvas, thresholdCanvas].filter(
-      (canvas): canvas is HTMLCanvasElement => canvas !== null,
-    );
-  }
-
-  const stronglySharpenedValues = sharpenValues(
-    sharpenedValues,
-    width,
-    height,
-    0.82,
+  return [sharpenedCanvas, thresholdCanvas].filter(
+    (canvas): canvas is HTMLCanvasElement => canvas !== null,
   );
-  const strongThreshold = getOtsuThreshold(stronglySharpenedValues);
-  const adaptiveValues = createAdaptiveThresholdValues(
-    stronglySharpenedValues,
-    width,
-    height,
-    strongThreshold,
-  );
-  const invertedAdaptiveValues = new Uint8ClampedArray(adaptiveValues.length);
-  for (let pixel = 0; pixel < adaptiveValues.length; pixel += 1) {
-    invertedAdaptiveValues[pixel] = 255 - adaptiveValues[pixel];
-  }
-
-  return [
-    sharpenedCanvas,
-    createGrayscaleCanvas(stronglySharpenedValues, width, height),
-    thresholdCanvas,
-    createThresholdCanvas(
-      stronglySharpenedValues,
-      width,
-      height,
-      strongThreshold,
-    ),
-    createGrayscaleCanvas(adaptiveValues, width, height),
-    createGrayscaleCanvas(invertedAdaptiveValues, width, height),
-  ].filter((canvas): canvas is HTMLCanvasElement => canvas !== null);
 }
 
 export async function applyCameraOptimizations(video: HTMLVideoElement) {
@@ -385,7 +371,7 @@ export function createEnhancedVideoFrames(video: HTMLVideoElement) {
   return source ? createEnhancedCanvases(source) : [];
 }
 
-export async function createEnhancedImageFrames(imageUrl: string) {
+export async function* createEnhancedImageFrames(imageUrl: string) {
   const image = new Image();
   image.decoding = "async";
 
@@ -402,5 +388,87 @@ export async function createEnhancedImageFrames(imageUrl: string) {
     IMAGE_FRAME_MAX_DIMENSION,
     true,
   );
-  return source ? createEnhancedCanvases(source, true) : [];
+  if (!source) return;
+
+  const prepared = prepareEnhancedValues(source);
+  source.width = 1;
+  source.height = 1;
+  if (!prepared) return;
+
+  const { width, height, sharpenedValues } = prepared;
+  const output = document.createElement("canvas");
+
+  try {
+    const sharpened = createGrayscaleCanvas(
+      sharpenedValues,
+      width,
+      height,
+      output,
+    );
+    if (sharpened) yield sharpened;
+
+    const stronglySharpenedValues = sharpenValues(
+      sharpenedValues,
+      width,
+      height,
+      0.82,
+    );
+    const stronglySharpened = createGrayscaleCanvas(
+      stronglySharpenedValues,
+      width,
+      height,
+      output,
+    );
+    if (stronglySharpened) yield stronglySharpened;
+
+    const threshold = getOtsuThreshold(sharpenedValues);
+    const thresholdCanvas = createThresholdCanvas(
+      sharpenedValues,
+      width,
+      height,
+      threshold,
+      false,
+      output,
+    );
+    if (thresholdCanvas) yield thresholdCanvas;
+
+    const strongThreshold = getOtsuThreshold(stronglySharpenedValues);
+    const strongThresholdCanvas = createThresholdCanvas(
+      stronglySharpenedValues,
+      width,
+      height,
+      strongThreshold,
+      false,
+      output,
+    );
+    if (strongThresholdCanvas) yield strongThresholdCanvas;
+
+    const adaptiveValues = createAdaptiveThresholdValues(
+      stronglySharpenedValues,
+      width,
+      height,
+      strongThreshold,
+    );
+    const adaptive = createGrayscaleCanvas(
+      adaptiveValues,
+      width,
+      height,
+      output,
+    );
+    if (adaptive) yield adaptive;
+
+    for (let pixel = 0; pixel < adaptiveValues.length; pixel += 1) {
+      adaptiveValues[pixel] = 255 - adaptiveValues[pixel];
+    }
+    const invertedAdaptive = createGrayscaleCanvas(
+      adaptiveValues,
+      width,
+      height,
+      output,
+    );
+    if (invertedAdaptive) yield invertedAdaptive;
+  } finally {
+    output.width = 1;
+    output.height = 1;
+  }
 }
