@@ -781,6 +781,7 @@ function Reader() {
   > | null>(null);
   const cameraActiveRef = useRef(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const resultPaneRef = useRef<HTMLDivElement>(null);
   const safeLink = useMemo(() => getSafeUrl(scanResult), [scanResult]);
   const bcbpData = useMemo(
     () =>
@@ -898,6 +899,18 @@ function Reader() {
       fallbackControlsRef.current = null;
       scannerRef.current?.stop();
       setCameraState("idle");
+
+      if (window.matchMedia("(max-width: 900px)").matches) {
+        window.requestAnimationFrame(() => {
+          resultPaneRef.current?.scrollIntoView({
+            behavior: window.matchMedia("(prefers-reduced-motion: reduce)")
+              .matches
+              ? "auto"
+              : "smooth",
+            block: "start",
+          });
+        });
+      }
     },
     [stopEnhancedScan],
   );
@@ -1397,7 +1410,7 @@ function Reader() {
         </div>
       </div>
 
-      <div className="result-pane">
+      <div className="result-pane" ref={resultPaneRef}>
         <div className="preview-topline">
           <span>Scan result</span>
           <span>
