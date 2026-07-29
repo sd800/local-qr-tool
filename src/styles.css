@@ -1232,12 +1232,12 @@ footer {
 
 .paste-image-line {
   width: min(100%, 340px);
-  min-height: 40px;
+  min-height: 56px;
   display: flex;
   align-items: center;
   gap: 9px;
   margin-top: 14px;
-  padding: 7px 9px 7px 11px;
+  padding: 12px 10px 12px 12px;
   border: 1px solid var(--line);
   border-radius: 8px;
   color: var(--muted);
