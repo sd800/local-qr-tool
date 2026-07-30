@@ -8,7 +8,14 @@ const pagesRoot = resolve(projectRoot, "docs");
 const htmlPath = resolve(outputRoot, "index.html");
 const previewImagePath = resolve(pagesRoot, "illu.png");
 const llmsTextPath = resolve(pagesRoot, "llms.txt");
-const faviconPath = resolve(pagesRoot, "favicon.png");
+const webAppAssetNames = [
+  "favicon.png",
+  "apple-touch-icon.png",
+  "app-icon-192.png",
+  "app-icon-512.png",
+  "app-icon-maskable-512.png",
+  "site.webmanifest",
+];
 
 let html = await readFile(htmlPath, "utf8");
 
@@ -66,7 +73,9 @@ await Promise.all([
   writeFile(resolve(pagesRoot, "index.html"), html),
   copyFile(previewImagePath, resolve(outputRoot, "illu.png")),
   copyFile(llmsTextPath, resolve(outputRoot, "llms.txt")),
-  copyFile(faviconPath, resolve(outputRoot, "favicon.png")),
+  ...webAppAssetNames.map((fileName) =>
+    copyFile(resolve(pagesRoot, fileName), resolve(outputRoot, fileName)),
+  ),
   writeFile(resolve(pagesRoot, ".nojekyll"), ""),
 ]);
 
