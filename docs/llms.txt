@@ -28,5 +28,5 @@ encoded content is shown alongside decoded fields.
 
 ## Optional
 
-- [QR Studio Local illustration](https://qrlocal.songming.org/illu.png):
+- [QR Studio Local - illustration](https://qrlocal.songming.org/illu.png):
   Social-preview artwork for the website.
