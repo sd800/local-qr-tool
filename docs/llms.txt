@@ -1,0 +1,32 @@
+# QR Studio Local
+
+> QR Studio Local is a privacy-first, browser-only tool for creating and
+> scanning QR codes and other barcodes. Generation, image processing, scanning,
+> and structured-data decoding happen locally on the user's device.
+
+QR Studio Local is a static website with no accounts, backend, uploads, or
+server-side processing.
+
+The generator supports QR, PDF417, Aztec, UPC-A, EAN-13, Code 128, GS1 DataBar,
+Data Matrix, and Micro QR images, with PNG and SVG export.
+
+The reader supports QR, Micro QR, Aztec, Data Matrix, PDF417, UPC/EAN, Code 39,
+Code 93, Code 128, Codabar, ITF, and DataBar. Users can scan with a camera or
+choose, drag, or paste an image. Difficult still images can be retried with
+local sharpening, thresholding, inversion, and rotation recovery.
+
+The reader can decode IATA Bar Coded Boarding Pass data from supported 2D codes
+and AAMVA Card Design Standard DL/ID data from compatible PDF417 codes. Raw
+encoded content is shown alongside decoded fields.
+
+## Website
+
+- [QR Studio Local](https://qrlocal.songming.org/): Create and scan supported
+  visual codes locally in a web browser.
+- [Privacy information](https://qrlocal.songming.org/#privacy): Summary of the
+  site's on-device processing and no-upload design.
+
+## Optional
+
+- [QR Studio Local illustration](https://qrlocal.songming.org/illu.png):
+  Social-preview artwork for the website.
