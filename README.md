@@ -1,11 +1,11 @@
-# Local QR Studio
+# QR Studio Local
 
 [Visit deployed website](https://qrlocal.songming.org)
 
-QR Studio is a privacy-first barcode generator and reader that runs entirely
-in the browser. It creates customizable visual codes, exports PNG and SVG
-images, and reads supported codes from a camera or image file without sending
-user data to a server.
+QR Studio Local is a privacy-first barcode generator and reader that runs
+entirely in the browser. It creates customizable visual codes, exports PNG and
+SVG images, and reads supported codes from a camera or image file without
+sending user data to a server.
 
 ## Features
 
@@ -93,4 +93,4 @@ scripts/    Build utilities
 src/        Application source
 ```
 
-![Illustration image](illu.png)
+![Illustration image](docs/illu.png)
