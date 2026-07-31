@@ -71,7 +71,6 @@ await rm(resolve(outputRoot, "assets"), { recursive: true, force: true });
 await mkdir(pagesRoot, { recursive: true });
 await Promise.all([
   writeFile(resolve(pagesRoot, "index.html"), html),
-  copyFile(resolve(outputRoot, "404.html"), resolve(pagesRoot, "404.html")),
   copyFile(previewImagePath, resolve(outputRoot, "illu.png")),
   copyFile(llmsTextPath, resolve(outputRoot, "llms.txt")),
   ...webAppAssetNames.map((fileName) =>
