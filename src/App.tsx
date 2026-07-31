@@ -274,7 +274,7 @@ function App() {
             <p className="hero-support-subtitle">
               Support QR, 1D, PDF417, Aztec, Data Matrix, Micro QR, DataBar &
               other barcodes. Support decoding boarding passes and USA/Canada
-              DL/IDs.
+              DL/IDs. Web app ready.
             </p>
             <div className="hero-actions">
               <button
