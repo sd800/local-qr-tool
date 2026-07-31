@@ -40,6 +40,8 @@ sending user data to a server.
 
 - Light and dark themes with native browser color-scheme support
 - Responsive layout for desktop and mobile devices
+- Add QR Local to a supported device's Home Screen for a standalone,
+  app-like experience
 - Static deployment with no backend or account system
 
 ## Privacy
