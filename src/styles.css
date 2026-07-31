@@ -409,6 +409,10 @@ footer {
   font-size: 14px;
 }
 
+.hero-web-app-ready {
+  white-space: nowrap;
+}
+
 .hero-actions {
   display: flex;
   align-items: center;
