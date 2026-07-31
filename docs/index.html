@@ -213,6 +213,20 @@ break;case "inversionMode":switch(c){case "original":Y="dontInvert";break;case "
   <body>
     <div id="root"></div>
     <script>
+      const indexAliasPattern = /\/index(?:\.html)?$/;
+      if (
+        (window.location.protocol === "http:" ||
+          window.location.protocol === "https:") &&
+        indexAliasPattern.test(window.location.pathname)
+      ) {
+        const canonicalUrl = new URL(window.location.href);
+        canonicalUrl.pathname = canonicalUrl.pathname.replace(
+          indexAliasPattern,
+          "/",
+        );
+        window.location.replace(canonicalUrl.href);
+      }
+
       const preferredTheme = window.matchMedia("(prefers-color-scheme: dark)")
         .matches
         ? "dark"
