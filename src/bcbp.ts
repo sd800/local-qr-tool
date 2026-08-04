@@ -161,18 +161,18 @@ const RANKED_IATA_AIRLINE_NAMES = [
 ] as const;
 
 const MONTH_NAMES = [
-  "January",
-  "February",
-  "March",
-  "April",
+  "Jan",
+  "Feb",
+  "Mar",
+  "Apr",
   "May",
   "June",
   "July",
-  "August",
-  "September",
-  "October",
-  "November",
-  "December",
+  "Aug",
+  "Sep",
+  "Oct",
+  "Nov",
+  "Dec",
 ];
 
 function cleanField(value: string) {
